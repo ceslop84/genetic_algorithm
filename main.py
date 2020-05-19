@@ -222,6 +222,7 @@ class Mochila():
         """ Método para realizar a penalização do objeto caso este supere a capacidade máxima."""
         if self.peso > CAPACIDADE:
             self.fitness = int((CAPACIDADE * self.fitness)/self.peso)
+            #self.fitness = 1
 
 class Geracao():
     """ Classe que representa o objeto de uma geraćão inteira de elementos do tipo mochila."""
@@ -344,6 +345,17 @@ class Geracao():
                 elementos.remove(elem)
                 return [elem, elementos]
 
+    def selecionar_melhor(self):
+        """ Método para selecionar o melhor elemento de uma geracão.
+
+        Returns:
+            Mochila: Objeto do tipo mochila.
+        """
+        for elem in self.populacao:
+            if elem.peso <= CAPACIDADE:
+                return elem
+        return None
+
 # Probabilidade de mutação.
 PM = 0.05
 # Probabilidade de Crossover/reprodução entre membros de uma geração.
@@ -353,11 +365,17 @@ NP = 50
 # Capacidade da mochila, em kg.
 CAPACIDADE = 120
 # Número máximo de gerações.
-MAX_GERACOES = 500 * NP
+MAX_GERACOES = 5
 # Leitura dos objetos que são possíveis colocar na mochila.
 INVENTARIO = Inventario("dados.csv")
 
-if __name__ == "__main__":
+def calcular_mochila(metodo):
+    """ Método para calcular a mochila mais valiosa com base num capacidade de carga limite
+    e numa lista de itens com valores e pesos.
+
+    Returns:
+            Mochila: Objeto do tipo mochila.
+        """
     # Instanciação do vetor repositório das gerações.
     geracoes = [None] * MAX_GERACOES
     # Criação da primeira geracao e população inicial.
@@ -369,7 +387,21 @@ if __name__ == "__main__":
         print(geracao)
         for mochila in geracao.populacao:
             print(mochila)
-        # Evolui a geraçao (reprodução e mutação)
-        geracao = geracao.evoluir("p")
-        # Inclui a nova geração ao vetor de gerações.
-        geracoes[geracao.identificador] = geracao
+        # Verificar se não é a última geracão da lista.
+        if geracao.identificador < MAX_GERACOES-1:
+            # Evolui a geraçao (reprodução e mutação)
+            geracao = geracao.evoluir(metodo)
+            # Inclui a nova geração ao vetor de gerações.
+            geracoes[geracao.identificador] = geracao
+    ult_geracao = geracoes[len(geracoes)-1]
+    mochila = ult_geracao.selecionar_melhor()
+    return mochila
+
+
+if __name__ == "__main__":
+    penalizacao = list()
+    reparacao = list()
+    for x in range(10):
+        penalizacao.append(calcular_mochila("p"))
+        reparacao.append(calcular_mochila("r"))
+    print("fim")
