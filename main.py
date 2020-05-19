@@ -59,34 +59,73 @@ class Inventario():
         return len(self.itens)
 
 class Item():
+    """Classe que representa cada item de uma mochila ou do inventário."""
+
     def __init__(self, index, peso, valor):
+        """Método inicializador da classe.
+
+        Parameters:
+            index (int): Valor para indicar a referência do item.
+            peso (int): Valor do peso do item.
+            valor (int): Representaćão do valor monetário do item.
+        """
+
         self.index = int(index)
         self.peso = int(peso)
         self.valor = int(valor)
 
 class Mochila():
+    """Classe que representa cada item de uma mochila ou do inventário."""
 
     def __init__(self, composicao=None, nascimento=None):
+        """Método inicializador da classe.
+
+        Parameters:
+            composicao (list): Lista com a composicao de itens da mochila.
+            peso (int): Referência para indicar em qual geracão a mochila foi criada.
+        """
+
         self.composicao = composicao
         self.fitness = None
         self.nascimento = nascimento
 
     @property
     def nascimento(self):
+        """Método tipo GET do parâmetro nascimento.
+
+        Returns:
+            int: Referência para indicar em qual geracão a mochila foi criada.
+        """
+
         return self.__nascimento
 
     @nascimento.setter
     def nascimento(self, nascimento):
+        """Método tipo SET do parâmetro nascimento.
+
+        Parameters:
+            nascimento (int): Referência para indicar em qual geracão a mochila foi criada.
+        """
         if nascimento is None:
             nascimento = 0
         self.__nascimento = nascimento
 
     @property
     def composicao(self):
+        """Método tipo GET do parâmetro composićão.
+
+        Returns:
+            list: Lista com a composicao de itens da mochila.
+        """
         return self.__composicao
 
     @composicao.setter
     def composicao(self, composicao):
+        """Método tipo SET do parâmetro composićão.
+
+        Parameters:
+            composicao (list): Lista com a composicao de itens da mochila.
+        """
         # Valor semente para randômicos.
         random.seed(int(round(time() * 1000)))
         if composicao is None:
@@ -102,18 +141,29 @@ class Mochila():
 
     @property
     def fitness(self):
+        """Método tipo GET do parâmetro fitness.
+
+        Returns:
+            double: Valor com a indicacão do valor de fitness da Mochila.
+        """
+
         return self.__fitness
 
     @fitness.setter
     def fitness(self, valor=None):
+        """Método tipo SET do parâmetro fitness.
+
+        Parameters:
+            fitness (double): Valor com a indicacão do valor de fitness da Mochila.
+        """
+
         if valor is None:
             valor = self.__calcular_fitness()
         self.__fitness = valor
 
     def mutacionar(self):
-        """
-        Changes a random element of the permutation array from 0 -> 1 or from 1 -> 0.
-        """
+        """Método que muda o valor de um elemento aleatório de 0 para 1 ou vice-versa."""
+
         # Valor semente para randômicos.
         random.seed(int(round(time() * 1000)))
         elemento = random.randint(0, len(self.composicao)-1)
@@ -151,6 +201,8 @@ class Mochila():
         return self.__composicao[index]
 
 class Geracao():
+    """ Classe que representa o objeto de uma geraćão inteira de elementos do tipo mochila."""
+
     def __init__(self, evolucao=None, populacao=None):
         self.populacao = populacao
         self.evolucao = evolucao
@@ -160,26 +212,50 @@ class Geracao():
 
     @property
     def evolucao(self):
+        """Método tipo GET do parâmetro evolucão.
+
+        Returns:
+            int: Valor com a indicacão de qual número de evolucão esta geracão pertence.
+        """
         return self.__evolucao
 
     @evolucao.setter
     def evolucao(self, evolucao):
+        """Método tipo SET do parâmetro evolucão.
+
+        Parameters:
+            evolucao (int): Valor com a indicacão de qual número de evolucão esta geracão pertence.
+        """
         if evolucao is None:
             evolucao = 0
         self.__evolucao = evolucao
 
     @property
     def populacao(self):
+        """Método tipo GET do parâmetro populacão.
+
+        Returns:
+            list: Lista com os elementos que pertencem a esta geracão.
+        """
         return self.__populacao
 
     @populacao.setter
     def populacao(self, populacao):
+        """Método tipo SET do parâmetro populacão.
+
+        Parameters:
+            populacao (list): Lista com os elementos que pertencem a esta geracão.
+        """
         if populacao is None:
             populacao = [Mochila() for m in range(0, TAM_POP)]
         self.__populacao = sorted(
             populacao, key=lambda x: x.fitness, reverse=True)
 
     def evoluir(self):
+        """
+        Método que realiza a evolucão dos elementos que compõe uma geracão.
+        A evolucão é composta pela reproducão e mutacão de elementos.
+        """
 
         # Valor semente para randômicos.
         random.seed(int(round(time() * 1000)))
@@ -212,6 +288,15 @@ class Geracao():
         return geracao
 
     def roleta(self, elementos):
+        """ Método da roleta para uma série de elementos de uma geracão.
+
+        Parameters:
+            elementos (list): lista de elementos que serão sorteados pelo método da roleta.
+
+        Returns:
+            list: lista composta de elemento selecionado e lsita com o
+                 resto dos elementos não selecionados.
+        """
         # Valor semente para randômicos.
         random.seed(int(round(time() * 1000)))
         abs_total = sum(m.fitness for m in elementos)
@@ -239,6 +324,7 @@ MAX_GERACOES = 500 * TAM_POP
 INVENTARIO = Inventario("dados.csv")
 
 def main():
+    """ Método main do módulo"""
     # Instanciação do vetor repositório das gerações.
     geracoes = [None] * MAX_GERACOES
     # Criação da primeira geracao e população inicial.
