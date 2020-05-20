@@ -1,5 +1,5 @@
 """Módulo para o o cálculo do problema da mochila empregado Algoritmo Genético."""
-from os import path
+from os import path, mkdir
 from time import time
 from datetime import datetime
 import random
@@ -130,7 +130,8 @@ class Mochila():
         if composicao is None:
             # Valor semente para randômicos.
             random.seed(int(round(time() * 1000)))
-            composicao = [random.randint(0, 1) for x in range(0, len(INVENTARIO))]
+            composicao = [random.randint(0, 1)
+                          for x in range(0, len(INVENTARIO))]
         self.__composicao = composicao
 
     @property
@@ -288,7 +289,7 @@ class Geracao():
         self.__populacao = sorted(
             populacao, key=lambda x: x.fitness, reverse=True)
 
-    def evoluir(self, metodo):
+    def evoluir(self, metodo_evoluir):
         """
         Método que realiza a evolucão dos elementos que compõe uma geracão.
         A evolucão é composta pela reproducão e mutacão de elementos.
@@ -319,22 +320,24 @@ class Geracao():
                 resultado.mutacionar()
             ninhada.append(resultado)
 
-
         nova_pop = ninhada + self.populacao
         # Cfe item 3.1.a, as etapas de reparação/penalização ocorrem após a geração dos
         # filhos e antes da seleção dos sobrevimentes para a próxima geração
         # Definir penalizacão ou reparacão.
-        if metodo == "reparacao":
+        if metodo_evoluir == "reparacao":
             for elemento in nova_pop:
                 elemento.reparar()
-        elif metodo == "penalizacao":
+        elif metodo_evoluir == "penalizacao":
             for elemento in nova_pop:
                 elemento.penalizar()
         else:
-            raise ValueError("Método para refinamento da próxima geração não definido.")
+            raise ValueError(
+                "Método para refinamento da próxima geração não definido.")
 
-        nova_pop_ordenada = sorted(nova_pop, key=lambda x: x.fitness, reverse=True)
-        nova_geracao = Geracao(populacao=nova_pop_ordenada[:NP], identificador=self.identificador+1)
+        nova_pop_ordenada = sorted(
+            nova_pop, key=lambda x: x.fitness, reverse=True)
+        nova_geracao = Geracao(
+            populacao=nova_pop_ordenada[:NP], identificador=self.identificador+1)
         return nova_geracao
 
     def roleta(self, elementos):
@@ -370,7 +373,7 @@ class Geracao():
                 return [elem_id, elem]
         return [-1, None]
 
-def calcular_mochila(metodo):
+def calcular_geracoes(metodo_geracoes):
     """ Método para calcular a mochila mais valiosa com base num capacidade de carga limite
     e numa lista de itens com valores e pesos.
 
@@ -385,17 +388,13 @@ def calcular_mochila(metodo):
     geracoes[geracao.identificador] = geracao
     # Iteração até o número máximo de gerações.
     for geracao in geracoes:
-        # print(geracao)
-        # for individuo in geracao.populacao:
-        #     print(individuo)
         # Verificar se não é a última geracão da lista.
         if geracao.identificador < MAX_GERACOES-1:
             # Evolui a geraçao (reprodução e mutação)
-            geracao = geracao.evoluir(metodo)
+            geracao = geracao.evoluir(metodo_geracoes)
             # Inclui a nova geração ao vetor de gerações.
             geracoes[geracao.identificador] = geracao
-    ult_geracao = geracoes[len(geracoes)-1]
-    return ult_geracao.selecionar_melhor()
+    return geracoes
 
 # Probabilidade de mutação.
 PM = 0.05
@@ -408,32 +407,46 @@ CAPACIDADE = 120
 # Número máximo de gerações.
 MAX_GERACOES = 500
 # Leitura dos objetos que são possíveis colocar na mochila.
-INVENTARIO = Inventario("dados.csv")
+INVENTARIO = Inventario("inventario.csv")
+# Registro da hora de início para a geração dos arquivos de saída em pasta específica.
+TIMESTAMP = str(datetime.today().strftime('%Y%m%d_%H%M%S'))
 
 if __name__ == "__main__":
-    saida = open(f"saida_{str(datetime.today().strftime('%Y%m%d_%H%M%S'))}.csv", "a")
-    saida.write("método;")
-    saida.write("índice execução;")
-    saida.write("índice indivíduo;")
-    saida.write("geração nascimento;")
-    saida.write("fitness;")
-    saida.write("qntd itens;")
-    saida.write("peso;")
-    saida.write("lista itens")
-    saida.write("\n")
+    mkdir(f"{TIMESTAMP}")
+    arq1 = open(f"{TIMESTAMP}//resumo.csv", "a")
+    arq1.write("método;")
+    arq1.write("execução;")
+    arq1.write("posição;")
+    arq1.write("nascimento;")
+    arq1.write("fitness;")
+    arq1.write("qntd;")
+    arq1.write("peso;")
+    arq1.write("lista")
+    arq1.write("\n")
     for metodo in ["penalizacao", "reparacao"]:
+        mkdir(f"{TIMESTAMP}//{metodo}")
         for x in range(10):
-            [posicao, mochila] = calcular_mochila(metodo)
+            g_lista = calcular_geracoes(metodo)
+            arq2 = open(f"{TIMESTAMP}//{metodo}//{x}.csv", "a")
+            for g in g_lista:
+                arq2.write(str(g))
+                arq2.write("/n")
+                for individuo in g.populacao:
+                    arq2.write(str(individuo))
+                    arq2.write("/n")
+            arq2.close()
+            ult_geracao = g_lista[len(g_lista)-1]
+            [posicao, mochila] = ult_geracao.selecionar_melhor()
             if mochila is None:
-                saida.write(f"{metodo};{x};-;-;-;-;-;-\n")
+                arq1.write(f"{metodo};{x};-;-;-;-;-;-\n")
             else:
-                saida.write(f"{metodo};")
-                saida.write(f"{x};")
-                saida.write(f"{posicao};")
-                saida.write(f"{mochila.nascimento};")
-                saida.write(f"{mochila.fitness};")
-                saida.write(f"{mochila.qntd_itens()};")
-                saida.write(f"{mochila.peso};")
-                saida.write(f"{str(mochila.composicao)}")
-                saida.write("\n")
-    saida.close()
+                arq1.write(f"{metodo};")
+                arq1.write(f"{x};")
+                arq1.write(f"{posicao};")
+                arq1.write(f"{mochila.nascimento};")
+                arq1.write(f"{mochila.fitness};")
+                arq1.write(f"{mochila.qntd_itens()};")
+                arq1.write(f"{mochila.peso};")
+                arq1.write(f"{str(mochila.composicao)}")
+                arq1.write("\n")
+    arq1.close()
