@@ -1,6 +1,7 @@
 """Módulo para o o cálculo do problema da mochila empregado Algoritmo Genético."""
 from os import path
 from time import time
+from datetime import datetime
 import random
 import csv
 from copy import deepcopy
@@ -224,6 +225,18 @@ class Mochila():
             self.fitness = int((CAPACIDADE * self.fitness)/self.peso)
             #self.fitness = 1
 
+    def qntd_itens(self):
+        """ Método para calcular a quantidade de itens na mochila.
+
+        Returns:
+            int: quantidade de itens total.
+        """
+
+        qntd = 0
+        for i in range(len(self.__composicao)):
+            qntd += self.composicao[i]
+        return qntd
+
 class Geracao():
     """ Classe que representa o objeto de uma geraćão inteira de elementos do tipo mochila."""
 
@@ -311,10 +324,10 @@ class Geracao():
         # Cfe item 3.1.a, as etapas de reparação/penalização ocorrem após a geração dos
         # filhos e antes da seleção dos sobrevimentes para a próxima geração
         # Definir penalizacão ou reparacão.
-        if metodo == "r":
+        if metodo == "reparacao":
             for elemento in nova_pop:
                 elemento.reparar()
-        elif metodo == "p":
+        elif metodo == "penalizacao":
             for elemento in nova_pop:
                 elemento.penalizar()
         else:
@@ -351,23 +364,11 @@ class Geracao():
         Returns:
             Mochila: Objeto do tipo mochila.
         """
-        for elem in self.populacao:
+        for elem_id in range(len(self.populacao)):
+            elem = self.populacao[elem_id]
             if elem.peso <= CAPACIDADE:
-                return elem
-        return None
-
-# Probabilidade de mutação.
-PM = 0.05
-# Probabilidade de Crossover/reprodução entre membros de uma geração.
-PC = 0.5
-# Tamanho máximo da população.
-NP = 50
-# Capacidade da mochila, em kg.
-CAPACIDADE = 120
-# Número máximo de gerações.
-MAX_GERACOES = 5
-# Leitura dos objetos que são possíveis colocar na mochila.
-INVENTARIO = Inventario("dados.csv")
+                return [elem_id, elem]
+        return [-1, None]
 
 def calcular_mochila(metodo):
     """ Método para calcular a mochila mais valiosa com base num capacidade de carga limite
@@ -384,9 +385,9 @@ def calcular_mochila(metodo):
     geracoes[geracao.identificador] = geracao
     # Iteração até o número máximo de gerações.
     for geracao in geracoes:
-        print(geracao)
-        for mochila in geracao.populacao:
-            print(mochila)
+        # print(geracao)
+        # for individuo in geracao.populacao:
+        #     print(individuo)
         # Verificar se não é a última geracão da lista.
         if geracao.identificador < MAX_GERACOES-1:
             # Evolui a geraçao (reprodução e mutação)
@@ -394,14 +395,45 @@ def calcular_mochila(metodo):
             # Inclui a nova geração ao vetor de gerações.
             geracoes[geracao.identificador] = geracao
     ult_geracao = geracoes[len(geracoes)-1]
-    mochila = ult_geracao.selecionar_melhor()
-    return mochila
+    return ult_geracao.selecionar_melhor()
 
+# Probabilidade de mutação.
+PM = 0.05
+# Probabilidade de Crossover/reprodução entre membros de uma geração.
+PC = 0.5
+# Tamanho máximo da população.
+NP = 50
+# Capacidade da mochila, em kg.
+CAPACIDADE = 120
+# Número máximo de gerações.
+MAX_GERACOES = 500
+# Leitura dos objetos que são possíveis colocar na mochila.
+INVENTARIO = Inventario("dados.csv")
 
 if __name__ == "__main__":
-    penalizacao = list()
-    reparacao = list()
-    for x in range(10):
-        penalizacao.append(calcular_mochila("p"))
-        reparacao.append(calcular_mochila("r"))
-    print("fim")
+    saida = open(f"saida_{str(datetime.today().strftime('%Y%m%d_%H%M%S'))}.csv", "a")
+    saida.write("método;")
+    saida.write("índice execução;")
+    saida.write("índice indivíduo;")
+    saida.write("geração nascimento;")
+    saida.write("fitness;")
+    saida.write("qntd itens;")
+    saida.write("peso;")
+    saida.write("lista itens")
+    saida.write("\n")
+    for metodo in ["penalizacao", "reparacao"]:
+        for x in range(10):
+            [posicao, mochila] = calcular_mochila(metodo)
+            if mochila is None:
+                saida.write(f"{metodo};{x};-;-;-;-;-;-\n")
+            else:
+                saida.write(f"{metodo};")
+                saida.write(f"{x};")
+                saida.write(f"{posicao};")
+                saida.write(f"{mochila.nascimento};")
+                saida.write(f"{mochila.fitness};")
+                saida.write(f"{mochila.qntd_itens()};")
+                saida.write(f"{mochila.peso};")
+                saida.write(f"{str(mochila.composicao)}")
+                saida.write("\n")
+    saida.close()
