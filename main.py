@@ -202,7 +202,8 @@ class Mochila():
         return peso_total
 
     def __str__(self):
-        return f"Fitness:{self.fitness} Peso: {self.peso}, Composição:{str(self.composicao)}"
+        #return f"Fitness:{self.fitness} Peso: {self.peso}, Composição:{str(self.composicao)}"
+        return f"{self.nascimento};{self.fitness};{self.qntd_itens()};{self.peso};{str(self.composicao)}"
 
     def __len__(self):
         return len(self.composicao)
@@ -246,7 +247,8 @@ class Geracao():
         self.identificador = identificador
 
     def __str__(self):
-        return f"Geração {self.identificador} com {len(self.populacao)} indivíduos."
+        #return f"Geração {self.identificador} com {len(self.populacao)} indivíduos."
+        return f"{self.identificador}"
 
     @property
     def identificador(self):
@@ -304,23 +306,22 @@ class Geracao():
             tamanho_cruzamento += 1
 
         # Reprodução...
-        ninhada = []
+        ninhada = list()
         elementos = deepcopy(self.populacao)
         while (len(ninhada)*2) < tamanho_cruzamento:
             # Seleção dos reprodutores pelo método da roleta.
             [gene1, elementos] = self.roleta(elementos)
             [gene2, elementos] = self.roleta(elementos)
             half = int(len(gene1)/2)
-            # Primeira metada será do Gene1 e a outra metade do Gene2.
+            # Primeira metade será do Gene1 e a outra metade do Gene2.
             composicao = gene1[:half] + gene2[half:]
-            resultado = type(gene1)(composicao=composicao,
-                                    nascimento=(self.identificador+1))
+            filho = Mochila(composicao=composicao, nascimento=(self.identificador+1))
             # Mutacão...
             if PM > random.random():
-                resultado.mutacionar()
-            ninhada.append(resultado)
+                filho.mutacionar()
+            ninhada.append(filho)
 
-        nova_pop = ninhada + self.populacao
+        nova_pop = ninhada + deepcopy(self.populacao)
         # Cfe item 3.1.a, as etapas de reparação/penalização ocorrem após a geração dos
         # filhos e antes da seleção dos sobrevimentes para a próxima geração
         # Definir penalizacão ou reparacão.
@@ -391,9 +392,11 @@ def calcular_geracoes(metodo_geracoes):
         # Verificar se não é a última geracão da lista.
         if geracao.identificador < MAX_GERACOES-1:
             # Evolui a geraçao (reprodução e mutação)
-            geracao = geracao.evoluir(metodo_geracoes)
+            nova_geracao = geracao.evoluir(metodo_geracoes)
             # Inclui a nova geração ao vetor de gerações.
-            geracoes[geracao.identificador] = geracao
+            geracoes[nova_geracao.identificador] = nova_geracao
+            del nova_geracao
+        del geracao
     return geracoes
 
 # Probabilidade de mutação.
@@ -416,6 +419,7 @@ if __name__ == "__main__":
     arq1 = open(f"{TIMESTAMP}//resumo.csv", "a")
     arq1.write("método;")
     arq1.write("execução;")
+    arq1.write("geração;")
     arq1.write("posição;")
     arq1.write("nascimento;")
     arq1.write("fitness;")
@@ -428,12 +432,26 @@ if __name__ == "__main__":
         for x in range(10):
             g_lista = calcular_geracoes(metodo)
             arq2 = open(f"{TIMESTAMP}//{metodo}//{x}.csv", "a")
+            arq2.write("método;")
+            arq2.write("execução;")
+            arq2.write("geração;")
+            arq2.write("posição;")
+            arq2.write("nascimento;")
+            arq2.write("fitness;")
+            arq2.write("qntd;")
+            arq2.write("peso;")
+            arq2.write("lista")
+            arq2.write("\n")
             for g in g_lista:
-                arq2.write(str(g))
-                arq2.write("/n")
+                posicao = 0
                 for individuo in g.populacao:
+                    arq2.write(f"{metodo};")
+                    arq2.write(f"{x};")
+                    arq2.write(f"{str(g)};")
+                    arq2.write(f"{str(posicao)};")
                     arq2.write(str(individuo))
-                    arq2.write("/n")
+                    arq2.write("\n")
+                    posicao += 1
             arq2.close()
             ult_geracao = g_lista[len(g_lista)-1]
             [posicao, mochila] = ult_geracao.selecionar_melhor()
@@ -442,11 +460,8 @@ if __name__ == "__main__":
             else:
                 arq1.write(f"{metodo};")
                 arq1.write(f"{x};")
+                arq1.write(f"{MAX_GERACOES-1};")
                 arq1.write(f"{posicao};")
-                arq1.write(f"{mochila.nascimento};")
-                arq1.write(f"{mochila.fitness};")
-                arq1.write(f"{mochila.qntd_itens()};")
-                arq1.write(f"{mochila.peso};")
-                arq1.write(f"{str(mochila.composicao)}")
+                arq1.write(f"{str(mochila)}")
                 arq1.write("\n")
     arq1.close()
